@@ -1,0 +1,160 @@
+# =============================================================================
+# Apache Struts2 S2-045 Defense Lab - Docker Compose
+# =============================================================================
+# This lab demonstrates DEFENSE techniques against S2-045 class attacks.
+# All services are bound to localhost only for security.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Nginx Reverse Proxy with WAF Rules
+  # ---------------------------------------------------------------------------
+  # - Rate limiting (10 req/s)
+  # - Request size limits (10MB body, 8KB headers)
+  # - WAF rules to detect suspicious Content-Type patterns
+  # - Bound to 127.0.0.1:8080 only
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: struts-lab-nginx
+    ports:
+      - "127.0.0.1:8080:80"  # Localhost only - no public exposure
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/waf-rules.conf:/etc/nginx/waf-rules.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - struts-lab-net
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Tomcat Application Server with Struts 6.3.x (PATCHED - Not Vulnerable)
+  # ---------------------------------------------------------------------------
+  # - Runs minimal Struts2 webapp
+  # - Endpoints: /upload (multipart), /health (status check)
+  # - Logs multipart parsing errors and request metadata
+  # - Not exposed to host - only accessible via nginx
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: struts-lab-app
+    expose:
+      - "8080"  # Internal only - not bound to host
+    volumes:
+      - ./logs/app:/usr/local/tomcat/logs/app
+    environment:
+      - CATALINA_OPTS=-Xmx256m -Xms128m
+      - LOG_LEVEL=INFO
+    networks:
+      - struts-lab-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/struts-lab/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Vulnerable Application (for exploitation demonstration)
+  # ---------------------------------------------------------------------------
+  # - Runs Struts 2.3.31 (VULNERABLE to S2-045)
+  # - No WAF protection
+  # - Exposed on port 8081 for direct access
+  # - WARNING: Intentionally vulnerable for educational purposes
+  # ---------------------------------------------------------------------------
+  app-vulnerable:
+    build:
+      context: ./app-vulnerable
+      dockerfile: Dockerfile
+    container_name: struts-lab-app-vulnerable
+    ports:
+      - "127.0.0.1:8081:8080"  # Localhost only - vulnerable app
+    volumes:
+      - ./logs/app-vulnerable:/usr/local/tomcat/logs/app
+    environment:
+      - CATALINA_OPTS=-Xmx256m -Xms128m
+      - LOG_LEVEL=INFO
+    networks:
+      - struts-lab-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/struts-lab/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Exploit Container
+  # ---------------------------------------------------------------------------
+  # - Contains tools for demonstrating S2-045 exploitation
+  # - Includes Python, curl, and exploit scripts
+  # - Used for educational exploitation demonstrations
+  # ---------------------------------------------------------------------------
+  exploit:
+    build:
+      context: ./exploit
+      dockerfile: Dockerfile
+    container_name: struts-lab-exploit
+    depends_on:
+      app-vulnerable:
+        condition: service_healthy
+    networks:
+      - struts-lab-net
+    # One-shot container - runs exploit demo and exits
+    profiles:
+      - exploit
+
+  # ---------------------------------------------------------------------------
+  # Attack Simulator
+  # ---------------------------------------------------------------------------
+  # - Sends test requests simulating S2-045 attack PATTERNS (no actual exploits)
+  # - Tests both legitimate and suspicious requests
+  # - Observes blocking/logging behavior
+  # ---------------------------------------------------------------------------
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: struts-lab-simulator
+    depends_on:
+      nginx:
+        condition: service_started
+    networks:
+      - struts-lab-net
+    # One-shot container - runs tests and exits
+    profiles:
+      - test
+
+# =============================================================================
+# Network Configuration
+# =============================================================================
+networks:
+  struts-lab-net:
+    driver: bridge
+    internal: false  # Allow outbound for healthchecks
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+

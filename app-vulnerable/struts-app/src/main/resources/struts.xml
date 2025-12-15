@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =============================================================================
+  Struts2 Configuration for Vulnerable Application
+  =============================================================================
+  WARNING: This configuration uses Struts 2.3.31 which is VULNERABLE to S2-045.
+  This is for educational purposes only.
+  
+  Defines actions for:
+  - /upload - Multipart file upload endpoint (VULNERABLE)
+  - /health - Health check endpoint (JSON response)
+  =============================================================================
+-->
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+    "http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+    <!-- ===================================================================== -->
+    <!-- Global Configuration -->
+    <!-- ===================================================================== -->
+    
+    <!-- VULNERABLE: devMode enabled (not recommended for production) -->
+    <constant name="struts.devMode" value="false"/>
+    
+    <!-- File upload configuration -->
+    <constant name="struts.multipart.maxSize" value="10485760"/> <!-- 10MB max -->
+    <constant name="struts.multipart.maxFileSize" value="10485760"/>
+    
+    <!-- Encoding -->
+    <constant name="struts.i18n.encoding" value="UTF-8"/>
+
+    <!-- ===================================================================== -->
+    <!-- Package Definition -->
+    <!-- ===================================================================== -->
+    <package name="lab" namespace="/" extends="struts-default,json-default">
+
+        <!-- ================================================================= -->
+        <!-- Global Exception Handling -->
+        <!-- ================================================================= -->
+        <global-results>
+            <result name="error">/error.jsp</result>
+        </global-results>
+
+        <global-exception-mappings>
+            <exception-mapping exception="java.lang.Exception" result="error"/>
+        </global-exception-mappings>
+
+        <!-- ================================================================= -->
+        <!-- Health Check Action -->
+        <!-- ================================================================= -->
+        <action name="health" class="com.lab.struts.action.HealthAction">
+            <result name="success" type="json">
+                <param name="includeProperties">
+                    status,timestamp,uptime,memory,strutsVersion,requestId
+                </param>
+            </result>
+        </action>
+
+        <!-- ================================================================= -->
+        <!-- File Upload Action - VULNERABLE -->
+        <!-- ================================================================= -->
+        <!-- This action is vulnerable to S2-045 when malformed Content-Type
+             headers are sent with multipart requests. The error handling in
+             Struts 2.3.31 evaluates OGNL expressions in error messages. -->
+        <action name="upload" class="com.lab.struts.action.UploadAction">
+            <!-- File upload interceptor - minimal configuration -->
+            <interceptor-ref name="defaultStack">
+                <param name="fileUpload.maximumSize">10485760</param>
+            </interceptor-ref>
+            
+            <result name="success">/upload-success.jsp</result>
+            <result name="input">/upload-form.jsp</result>
+            <result name="error">/upload-error.jsp</result>
+        </action>
+
+        <!-- ================================================================= -->
+        <!-- Upload Form (GET) -->
+        <!-- ================================================================= -->
+        <action name="upload-form">
+            <result>/upload-form.jsp</result>
+        </action>
+
+    </package>
+
+</struts>
+

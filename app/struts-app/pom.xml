@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =============================================================================
+  Maven POM for Struts2 Defense Lab Application
+  =============================================================================
+  Uses Struts 6.3.x which is PATCHED and NOT VULNERABLE to S2-045.
+  
+  S2-045 (CVE-2017-5638) affected:
+  - Struts 2.3.5 through 2.3.31
+  - Struts 2.5 through 2.5.10
+  
+  This lab uses Struts 6.3.0.2 (released 2024) which is fully patched.
+  =============================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.lab.struts</groupId>
+    <artifactId>struts-lab</artifactId>
+    <version>1.0.0</version>
+    <packaging>war</packaging>
+
+    <name>Struts2 S2-045 Defense Lab</name>
+    <description>
+        Minimal Struts2 application for demonstrating defense against S2-045 attacks.
+        Uses PATCHED Struts version - NOT VULNERABLE.
+    </description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        
+        <!-- Struts 6.3.x - PATCHED VERSION (Not vulnerable to S2-045) -->
+        <!-- Note: Using 6.3.0.2 - if Jakarta issues persist, may need Tomcat 9 -->
+        <struts2.version>6.3.0.2</struts2.version>
+        <log4j2.version>2.22.1</log4j2.version>
+        <servlet.api.version>6.0.0</servlet.api.version>
+    </properties>
+
+    <dependencies>
+        <!-- ================================================================= -->
+        <!-- Struts2 Core - PATCHED VERSION -->
+        <!-- ================================================================= -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-core</artifactId>
+            <version>${struts2.version}</version>
+        </dependency>
+
+        <!-- ================================================================= -->
+        <!-- Servlet API (provided by Tomcat 9 - uses javax.servlet) -->
+        <!-- ================================================================= -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ================================================================= -->
+        <!-- Logging: Log4j2 -->
+        <!-- ================================================================= -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <!-- SLF4J bridge for libraries using SLF4J -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <!-- ================================================================= -->
+        <!-- File Upload Support (commons-fileupload2 for Struts 6.x) -->
+        <!-- ================================================================= -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-fileupload2-jakarta-servlet6</artifactId>
+            <version>2.0.0-M2</version>
+        </dependency>
+
+        <!-- ================================================================= -->
+        <!-- JSON Support (optional, for API responses) -->
+        <!-- ================================================================= -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-json-plugin</artifactId>
+            <version>${struts2.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>struts-lab</finalName>
+        <plugins>
+            <!-- Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                </configuration>
+            </plugin>
+
+            <!-- WAR Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+

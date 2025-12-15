@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =============================================================================
+  Struts2 Configuration for S2-045 Defense Lab
+  =============================================================================
+  Defines actions for:
+  - /upload - Multipart file upload endpoint
+  - /health - Health check endpoint (JSON response)
+  
+  Security Notes:
+  - File upload interceptor has size limits
+  - Allowed extensions are restricted
+  - devMode is disabled (security best practice)
+  =============================================================================
+-->
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN"
+    "https://struts.apache.org/dtds/struts-6.0.dtd">
+
+<struts>
+    <!-- ===================================================================== -->
+    <!-- Global Configuration -->
+    <!-- ===================================================================== -->
+    
+    <!-- SECURITY: Disable dev mode in production -->
+    <constant name="struts.devMode" value="false"/>
+    
+    <!-- Enable logging of action mapping -->
+    <constant name="struts.configuration.xml.reload" value="false"/>
+    
+    <!-- File upload configuration -->
+    <constant name="struts.multipart.maxSize" value="10485760"/> <!-- 10MB max -->
+    <constant name="struts.multipart.maxFileSize" value="10485760"/>
+    <constant name="struts.multipart.maxFiles" value="5"/>
+    
+    <!-- SECURITY: Strict method invocation -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="false"/>
+    <constant name="struts.mapper.action.prefix.enabled" value="false"/>
+    
+    <!-- Encoding -->
+    <constant name="struts.i18n.encoding" value="UTF-8"/>
+
+    <!-- ===================================================================== -->
+    <!-- Package Definition -->
+    <!-- ===================================================================== -->
+    <package name="lab" namespace="/" extends="struts-default,json-default">
+
+        <!-- ================================================================= -->
+        <!-- Global Exception Handling -->
+        <!-- ================================================================= -->
+        <global-results>
+            <result name="error">/error.jsp</result>
+        </global-results>
+
+        <global-exception-mappings>
+            <exception-mapping exception="java.lang.Exception" result="error"/>
+        </global-exception-mappings>
+
+        <!-- ================================================================= -->
+        <!-- Health Check Action -->
+        <!-- ================================================================= -->
+        <!-- Returns JSON health status for monitoring -->
+        <action name="health" class="com.lab.struts.action.HealthAction">
+            <result name="success" type="json">
+                <param name="includeProperties">
+                    status,timestamp,uptime,memory,strutsVersion,requestId
+                </param>
+            </result>
+        </action>
+
+        <!-- ================================================================= -->
+        <!-- File Upload Action -->
+        <!-- ================================================================= -->
+        <!-- Handles multipart/form-data uploads -->
+        <action name="upload" class="com.lab.struts.action.UploadAction">
+            <!-- File upload interceptor configuration -->
+            <interceptor-ref name="defaultStack">
+                <!-- Maximum file size: 10MB -->
+                <param name="fileUpload.maximumSize">10485760</param>
+                <!-- Allowed file types (MIME types) -->
+                <param name="fileUpload.allowedTypes">
+                    text/plain,
+                    text/csv,
+                    application/pdf,
+                    application/json,
+                    image/jpeg,
+                    image/png,
+                    image/gif
+                </param>
+                <!-- Allowed extensions -->
+                <param name="fileUpload.allowedExtensions">
+                    .txt,.csv,.pdf,.json,.jpg,.jpeg,.png,.gif
+                </param>
+            </interceptor-ref>
+            
+            <result name="success">/upload-success.jsp</result>
+            <result name="input">/upload-form.jsp</result>
+            <result name="error">/upload-error.jsp</result>
+        </action>
+
+        <!-- ================================================================= -->
+        <!-- Upload Form (GET) -->
+        <!-- ================================================================= -->
+        <action name="upload-form">
+            <result>/upload-form.jsp</result>
+        </action>
+
+    </package>
+
+</struts>
+

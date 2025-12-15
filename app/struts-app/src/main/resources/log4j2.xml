@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =============================================================================
+  Log4j2 Configuration for S2-045 Defense Lab
+  =============================================================================
+  Logging configuration optimized for security monitoring:
+  - Application logs to console and file
+  - Security events logged separately
+  - Request metadata logged for analysis
+  =============================================================================
+-->
+<Configuration status="WARN">
+
+    <Properties>
+        <!-- Log file location (mounted volume) -->
+        <Property name="logPath">/usr/local/tomcat/logs/app</Property>
+        <!-- Log pattern with request context -->
+        <Property name="logPattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <!-- Security log pattern (more detail) -->
+        <Property name="securityPattern">%d{ISO8601} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- ================================================================= -->
+        <!-- Console Appender (for Docker logs) -->
+        <!-- ================================================================= -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${logPattern}"/>
+        </Console>
+
+        <!-- ================================================================= -->
+        <!-- Application Log File -->
+        <!-- ================================================================= -->
+        <RollingFile name="AppLog"
+                     fileName="${logPath}/struts-lab.log"
+                     filePattern="${logPath}/struts-lab-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${logPattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="7"/>
+        </RollingFile>
+
+        <!-- ================================================================= -->
+        <!-- Security Events Log (separate file for SIEM integration) -->
+        <!-- ================================================================= -->
+        <RollingFile name="SecurityLog"
+                     fileName="${logPath}/security.log"
+                     filePattern="${logPath}/security-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${securityPattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <!-- ================================================================= -->
+        <!-- Request Audit Log -->
+        <!-- ================================================================= -->
+        <RollingFile name="AuditLog"
+                     fileName="${logPath}/audit.log"
+                     filePattern="${logPath}/audit-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{ISO8601} %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="50 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- ================================================================= -->
+        <!-- Security Logger (explicit category) -->
+        <!-- ================================================================= -->
+        <Logger name="SECURITY" level="INFO" additivity="false">
+            <AppenderRef ref="SecurityLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- ================================================================= -->
+        <!-- Application Loggers -->
+        <!-- ================================================================= -->
+        <Logger name="com.lab.struts" level="INFO" additivity="false">
+            <AppenderRef ref="AppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- ================================================================= -->
+        <!-- Struts2 Framework Logging -->
+        <!-- ================================================================= -->
+        <!-- Log multipart parsing at DEBUG for troubleshooting -->
+        <Logger name="org.apache.struts2" level="WARN" additivity="false">
+            <AppenderRef ref="AppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- File upload interceptor - INFO to see upload events -->
+        <Logger name="org.apache.struts2.interceptor.FileUploadInterceptor" level="INFO" additivity="false">
+            <AppenderRef ref="AppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- ================================================================= -->
+        <!-- Commons FileUpload (multipart parsing) -->
+        <!-- ================================================================= -->
+        <Logger name="org.apache.commons.fileupload2" level="INFO" additivity="false">
+            <AppenderRef ref="AppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- ================================================================= -->
+        <!-- OGNL (reduce noise, watch for errors) -->
+        <!-- ================================================================= -->
+        <Logger name="ognl" level="WARN" additivity="false">
+            <AppenderRef ref="AppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="com.opensymphony.xwork2" level="WARN" additivity="false">
+            <AppenderRef ref="AppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- ================================================================= -->
+        <!-- Root Logger -->
+        <!-- ================================================================= -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AppLog"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
+
