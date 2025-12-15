@@ -62,11 +62,9 @@ A Docker-based security lab demonstrating both **exploitation** and **defense** 
 
 ```bash
 # Clone the repository
-git clone <your-repository-url>
+git clone https://github.com/ACharaf06/cybersec.git
 cd cybersec
 ```
-
-**Note**: Replace `<your-repository-url>` with your actual Git repository URL (e.g., `https://github.com/username/cybersec.git` or `git@github.com:username/cybersec.git`)
 
 #### 2. Build and Run
 
